@@ -2,6 +2,7 @@ from datetime import datetime
 import numpy as np
 from python_tsp.exact import solve_tsp_dynamic_programming
 from python_tsp.heuristics import solve_tsp_lin_kernighan, solve_tsp_local_search
+import math
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -14,19 +15,20 @@ import pandas as pd
 #     current_datetime = datetime.now()
 #     return current_datetime
 
-def aggregate_tsp(max_points = 10, trials = 3):
+def aggregate_tsp(max_points = 10, trials = 3, approximate=False, plot_difference=False):
     
     av_maxima = []
     av_minima = []
     av_averages = []
     av_full_tsps = []
-    for n in range(2, max_points):
+    for n in range(4, max_points, 10):
+        print(n)
         maxima = []
         minima = []
         averages = []
         full_tsps = []
         for trial in range(trials):
-            distances, full_distance = flex_tsp(random_points(n))
+            distances, full_distance = flex_tsp(random_points(n), approximate)
             maxima.append(max(distances))
             minima.append(min(distances))
             averages.append(np.mean(distances))
@@ -39,7 +41,7 @@ def aggregate_tsp(max_points = 10, trials = 3):
 
     # Visualize the results in a table using pandas
     data = {
-        'Number of Points': list(range(2, max_points)),
+        'Number of Points': list(range(4, max_points, 10)),
         'Maximum Flex TSP': av_maxima,        
         'Average Flex TSP': av_averages,
         'Minimum Flex TSP': av_minima,
@@ -48,28 +50,19 @@ def aggregate_tsp(max_points = 10, trials = 3):
     df = pd.DataFrame(data)
     print(df)
     # Save the DataFrame to a CSV file
-    df.to_csv('tsp_results.csv', index=False)
-
-    # # Graph the results with number of points on the x-axis and the distances on the y-axis
-    # plt.figure(figsize=(10, 6))
-    # plt.plot(df['Number of Points'], df['Maxima'], label='Maxima', marker='o')
-    # plt.plot(df['Number of Points'], df['Averages'], label='Averages', marker='o')
-    # plt.plot(df['Number of Points'], df['Minima'], label='Minima', marker='o')
-    # plt.plot(df['Number of Points'], df['Full TSPs'], label='Full TSPs', marker='o')
-    # plt.title('TSP Distances vs Number of Points')
-    # plt.xlabel('Number of Points')
-    # plt.ylabel('Distance')
-    # plt.legend()
-    # plt.grid()
-    # plt.show()
+    # df.to_csv('tsp_results.csv', index=False)
 
     # # Graph the results with number of points on the x-axis and the distances on the y-axis
     # But graph them as a percent of the full TSP
     plt.figure(figsize=(10, 6))
-    plt.plot(df['Number of Points'], [x / y for x, y in zip(av_maxima, av_full_tsps)], label='Maxima', marker='o')
-    plt.plot(df['Number of Points'], [x / y for x, y in zip(av_averages, av_full_tsps)], label='Averages', marker='o')
-    plt.plot(df['Number of Points'], [x / y for x, y in zip(av_minima, av_full_tsps)], label='Minima', marker='o')
-    plt.plot(df['Number of Points'], [x / y for x, y in zip(av_full_tsps, av_full_tsps)], label='Full TSPs', marker='o')
+    
+
+
+
+    plt.plot(df['Number of Points'], [1 - x / y for x, y in zip(av_maxima, av_full_tsps)], label='Maxima', marker='o')
+    # plt.plot(df['Number of Points'], [1 - x / y for x, y in zip(av_averages, av_full_tsps)], label='Averages', marker='o')
+    # plt.plot(df['Number of Points'], [1 - x / y for x, y in zip(av_minima, av_full_tsps)], label='Minima', marker='o')
+    plt.plot(df['Number of Points'], [1 - x / y for x, y in zip(av_full_tsps, av_full_tsps)], label='Full TSPs', marker='o')
     plt.title('Flex TSP Distances vs Number of Points (as a percent of the full TSP)')
     plt.xlabel('Number of Points')
     plt.ylabel('Distance')
@@ -98,17 +91,17 @@ def flex_tsp_max(points):
     return max_distance, full_distance
 
 
-def flex_tsp(points):
+def flex_tsp(points, approximate=False):
     # Same as flex_tsp_max, but return the sorted array of distances instead of the max distance
     # For each point in points, remove it by index, calculate the TSP, and then re-insert the point
     distances = []
     for i in range(len(points)):
         new_points = np.delete(points, i, axis=0)
         # Use the index `i` to remove the point
-        permutation, distance = tsp(new_points, plot=False)
+        permutation, distance = tsp(new_points, approximate)  # Get the TSP result without showing the plot
         # Get the TSP result without showing the plot
         distances.append(distance)
-    full_permutation, full_distance = tsp(points)
+    full_permutation, full_distance = tsp(points, approximate)
     return sorted(distances), full_distance
     
 
@@ -355,11 +348,11 @@ def main():
 
     # print(tsp(random_points(1000), approximate=True))
 
-    my_points = random_points(12)
+    my_points = random_points(50)
     flex_tsp_plot_gradient(my_points, approximate=True)
-    flex_tsp_plot_dependency(my_points, approximate=False)
+    flex_tsp_plot_dependency(my_points, approximate=True)
 
-    # aggregate_tsp(15, 1)
+    # aggregate_tsp(100, 3, approximate=True, plot_difference=False)
 
 if __name__ == "__main__":
     main()
